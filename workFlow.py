@@ -97,9 +97,11 @@ class ml_model():
         cm = confusion_matrix(self.y_test, y_pred)
         
         if len(self.dataset.columns) > 5:
-            _plot_confusion_matrix(cm, classes=['ckd', 'notckd'], normalize =True)
+            classes=['ckd', 'notckd']
+            _plot_confusion_matrix(cm, classes)
         else:
-            _plot_confusion_matrix(cm, classes=['0', '1'], normalize =True)
+            classes=['0', '1']
+            _plot_confusion_matrix(cm,classes)
 
 
     def crossValidation(self):
