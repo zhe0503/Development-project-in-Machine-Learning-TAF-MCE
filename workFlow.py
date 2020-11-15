@@ -17,10 +17,11 @@ import figure
 
 
 class ml_model():
-    def __init__(self, classifier, dataset):
+    def __init__(self, classifier, dataset, option):
         self.classifier = classifier
         self.dataset = dataset
         self.preprocess_data()
+        self.option = option
 
     def preprocess_data(self):
     
@@ -69,31 +70,32 @@ class ml_model():
         print("dataset preprocessed.")
 
     def train(self):
-        self.classifier.fit(self.X_train, self.y_train)
-        
+        if self.option == "ml":
+            self.classifier.fit(self.X_train, self.y_train)
+        else:
+            model_checkpoint = keras.callbacks.ModelCheckpoint('./weight.hdf5', monitor="val_loss", mode="min",
+                                                               verbose=1, save_best_only=True)
+            history = self.classifier.fit(self.X_train, self.y_train, epochs=20, batch_size=64,
+                                          validation_data=(self.X_test, self.y_test), callbacks=[model_checkpoint])
+            figure.draw(history)
+
     def splitTrainTest(self):
         print("Data splitting ... ")
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], test_size = 0.2, random_state=44 )
         print("Split finished : Training size : %d, Test size : %d" %(self.X_train.shape[0], self.X_test.shape[0]))
 
     def predict(self):
-        y_pred = self.classifier.predict(self.X_test)
+        if self.option != "ml":
+            self.classifier = load_model('./weight.hdf5')
+            y_pred = (self.classifier.predict(self.X_test) > 0.5).astype("int32")
+        else:
+            y_pred = self.classifier.predict(self.X_test)
         cm = confusion_matrix(self.y_test, y_pred)
         print(cm)
 
     def evaluation(self):
         pass
 
-    def train_dnn(self):
-    	model_checkpoint = keras.callbacks.ModelCheckpoint('./weight.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
-    	history = self.classifier.fit(self.X_train,self.y_train,epochs=20,batch_size=64,validation_data=(self.X_test,self.y_test),callbacks=[model_checkpoint])
-    	figure.draw(history)
-
-    def predict_cnn(self):
-        self.classifier = load_model('./weight.hdf5')
-        y_pred = (self.classifier.predict(self.X_test) > 0.5).astype("int32")
-        cm = confusion_matrix(self.y_test, y_pred)
-        print(cm)
 
 def argv_test(argv):
     dataset = ''
@@ -118,12 +120,14 @@ def argv_test(argv):
 
 if __name__ == '__main__':
     dataset, classifier = argv_test(sys.argv[1:])
+    option = 'ml'
     if classifier == '' or classifier == "svm":
         classifier = svm.SVC(kernel='linear')
     elif classifier == 'xgboost':
         classifier = XGBClassifier(learning_rate= 0.2, max_depth= 7,objective='binary:logistic',n_estimators= 100,gamma=0.5,scale_pos_weight=3, n_jobs= -1,reg_alpha=0.2,reg_lambda=1,random_state =1367)
     elif classifier == 'CNN':
-        classifier = ourCNN()
+        classifier = ourCNN(4)
+        option = 'dl'
     else:
         print("Please choose a valid classifier : \n<svm> for SVM(by default) \n <xgboost> for XGBoost \n <CNN> for a 3-layer deep-learning model")
         sys.exit(2)
@@ -137,6 +141,6 @@ if __name__ == '__main__':
         print("Please choose a valid dataset : \n<banknote> for banknote authentication dataset(by default) \n and <disease> for Chronic KIdney Disease dataset")
         sys.exit(2)
 
-    model = ml_model(classifier, dataset)
+    model = ml_model(classifier, dataset, option)
     model.train()
     model.predict()
