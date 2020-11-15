@@ -1,14 +1,19 @@
 import numpy as np
 import pandas as pd
 import sys, getopt
+
 import cnn.ourCNN
+
+from sklearn import svm
 import figure.draw
 from sklearn.model_selection import train_test_split
 import tensorflow.keras as keras
+
 class ml():
     def __init__(self, classifier, dataset):
         self.classifier = classifier
         self.dataset = dataset
+        self.preprocess_data()
 
     def preprocess_data(self):
         
@@ -16,7 +21,7 @@ class ml():
         pass
 
     def fit(self):
-    	model_checkpoint = keras.callbacks.ModelCheckpoint('./weight.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
+       	model_checkpoint = keras.callbacks.ModelCheckpoint('./weight.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
 
         history = classifier.fit(x_train,y_train,epochs=20,batch_size=512,validation_data=(x_val,y_val),callbacks=[model_checkpoint])
         
@@ -26,9 +31,9 @@ class ml():
         pass
 
     def evaluation(self):
-		scores = classifier.evaluate(x_test, y_test)
-		for i in range(len(scores)):
-		 print("\n%s: %.2f%%" % (classifier.metrics_names[i], scores[i]*100))
+        scores = classifier.evaluate(x_test, y_test)
+        for i in range(len(scores)):
+            print("\n%s: %.2f%%" % (classifier.metrics_names[i], scores[i]*100))
         pass
 
 
@@ -52,5 +57,10 @@ def argv_test(argv):
             classifier = arg
     print("dataset chose : ", dataset)
     print("classifier chose : ", classifier)
+    return dataset, classifier
 if __name__ == '__main__':
-    argv_test(sys.argv[1:])
+    dataset, classifier = argv_test(sys.argv[1:])
+    if classifier == '':
+        classifier = svm.SVC(kernel='linear')
+    model = ml(dataset, classifier)
+
