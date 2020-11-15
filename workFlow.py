@@ -1,5 +1,6 @@
 import pandas as pd
 import sys, getopt
+import statistics 
 
 
 #classifier
@@ -8,7 +9,7 @@ from xgboost.sklearn import XGBClassifier
 from dnn import ourDNN
 
 #utils
-from sklearn.metrics import make_scorer
+from sklearn.metrics import make_scorer，precision_score,recall_score
 from sklearn.model_selection import train_test_split,cross_validate
 from sklearn import preprocessing
 from sklearn.metrics import confusion_matrix
