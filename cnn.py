@@ -3,7 +3,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 
 
-def CNN():
+def ourCNN():
 	# create model
 	model = Sequential()
 	model.add(Dense(60, input_dim=60, activation='relu'))

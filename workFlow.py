@@ -2,10 +2,12 @@ import numpy as np
 import pandas as pd
 
 import sys, getopt
+import cnn
 from sklearn import svm
 
 #import cnn.CNN
 #import figure.draw
+
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 import tensorflow.keras as keras
@@ -69,6 +71,7 @@ class ml():
         #draw(classifier)
         pass
 
+
     def predict(self):
         pass
 
@@ -76,7 +79,8 @@ class ml():
 		#scores = CNN.evaluate(x_test, y_test)
 		#for i in range(len(scores)):
 		 #print("\n%s: %.2f%%" % (CNN.metrics_names[i], scores[i]*100))
-        pass
+
+
 
 
 def argv_test(argv):
@@ -116,4 +120,5 @@ if __name__ == '__main__':
     model = ml(classifier, dataset)
     
     
+
 
