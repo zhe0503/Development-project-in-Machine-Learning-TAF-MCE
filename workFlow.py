@@ -60,13 +60,7 @@ class ml():
             pass
         print("dataset preprocessed.")
     
-    
-    def splitTrainTest(self):
-    
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], test_size = 0.2, random_state=44 )
-        
-        #return X_train, X_test, y_train, y_test
-        
+   
         
     def train(self):
     	model_checkpoint = keras.callbacks.ModelCheckpoint('./weight.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
@@ -74,14 +68,25 @@ class ml():
     	figure.draw(history)
     	pass
     	
+
+        
+    def splitTrainTest(self):
+    
+        X_train, X_test, y_train, y_test = train_test_split(self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], test_size = 0.2, random_state=44 )
+        
+        return X_train, X_test, y_train, y_test
+
+
     def predict(self):
     	model = load_model('./weight.hdf5')
     	
     	result = model.predict(self.X_test)
     def evaluation(self):
+
     	scores = self.classifier.evaluate(self.X_test, self.y_test)
     	for i in range(len(scores)):
     		print("\n%s: %.2f%%" % (self.classifier.metrics_names[i], scores[i]*100))
+
 
 def argv_test(argv):
     dataset = ''
