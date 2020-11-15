@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import sys, getopt
-import cnn.CNN
+import cnn.ourCNN
 import figure.draw
 from sklearn.model_selection import train_test_split
 import tensorflow.keras as keras
@@ -16,19 +16,19 @@ class ml():
         pass
 
     def fit(self):
-    	model_checkpoint = keras.callbacks.ModelCheckpoint('./weight/weight_cnn.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
+    	model_checkpoint = keras.callbacks.ModelCheckpoint('./weight.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
 
-        classifier = CNN.fit(x_train,y_train,epochs=20,batch_size=512,validation_data=(x_val,y_val),callbacks=[model_checkpoint])
+        history = classifier.fit(x_train,y_train,epochs=20,batch_size=512,validation_data=(x_val,y_val),callbacks=[model_checkpoint])
         
-        draw(classifier)
+        draw(history)
 
     def predict(self):
         pass
 
     def evaluation(self):
-		scores = CNN.evaluate(x_test, y_test)
+		scores = classifier.evaluate(x_test, y_test)
 		for i in range(len(scores)):
-		 print("\n%s: %.2f%%" % (CNN.metrics_names[i], scores[i]*100))
+		 print("\n%s: %.2f%%" % (classifier.metrics_names[i], scores[i]*100))
         pass
 
 
