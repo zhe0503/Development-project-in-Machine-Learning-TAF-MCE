@@ -1,17 +1,26 @@
 import numpy as np
 import pandas as pd
 import sys, getopt
-
+import cnn.CNN
+import figure.draw
+from sklearn.model_selection import train_test_split
+import tensorflow.keras as keras
 class ml():
     def __init__(self, classifier, dataset):
         self.classifier = classifier
         self.dataset = dataset
 
     def preprocess_data(self):
+        
+		
         pass
 
     def fit(self):
-        pass
+    	model_checkpoint = keras.callbacks.ModelCheckpoint('./weight/weight_cnn.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
+
+        classifier = CNN.fit(x_train,y_train,epochs=20,batch_size=512,validation_data=(x_val,y_val),callbacks=[model_checkpoint])
+        
+        draw(classifier)
 
     def predict(self):
         pass
