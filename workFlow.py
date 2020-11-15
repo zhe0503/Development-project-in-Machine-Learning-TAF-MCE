@@ -43,7 +43,6 @@ class ml_model():
             #This dataset has two types of attribute:
             col_disease_num=['age','bp','sg','al','su','bgr','bu','sc','sod','pot','hemo','pcv','wc','rc']
             col_disease_str=['rbc','pc','pcc','ba','htn','dm','cad','appet','pe','ane','classification']
-            del self.dataset['id']
             #replace missing values of the disease dataset:
             for col in col_disease_num:
                 self.dataset[col]=pd.to_numeric(self.dataset[col], errors='coerce')
@@ -133,24 +132,26 @@ def argv_test(argv):
 if __name__ == '__main__':
     dataset, classifier = argv_test(sys.argv[1:])
     option = 'ml'
-    if classifier == '' or classifier == "svm":
-        classifier = svm.SVC(kernel='linear')
-    elif classifier == 'xgboost':
-        classifier = XGBClassifier(learning_rate= 0.2, max_depth= 7,objective='binary:logistic',n_estimators= 100,gamma=0.5,scale_pos_weight=3, n_jobs= -1,reg_alpha=0.2,reg_lambda=1,random_state =1367)
-    elif classifier == 'CNN':
-        classifier = ourCNN(4)
-        option = 'dl'
-    else:
-        print("Please choose a valid classifier : \n<svm> for SVM(by default) \n <xgboost> for XGBoost \n <CNN> for a 3-layer deep-learning model")
-        sys.exit(2)
 
     if dataset == 'banknote' or dataset == '':
         cols_banknote=['variance of Wavelet Transformed image','skewness of Wavelet Transformed image','curtosis of Wavelet Transformed image','entropy of image','class']
         dataset=pd.read_csv('./Dataset/data_banknote_authentication.txt',names=cols_banknote)
     elif dataset == 'disease':
         dataset=pd.read_csv('./Dataset/kidney_disease.csv', dtype=object)
+        del dataset['id']
     else:
         print("Please choose a valid dataset : \n<banknote> for banknote authentication dataset(by default) \n and <disease> for Chronic KIdney Disease dataset")
+        sys.exit(2)
+
+    if classifier == '' or classifier == "svm":
+        classifier = svm.SVC(kernel='linear')
+    elif classifier == 'xgboost':
+        classifier = XGBClassifier(learning_rate= 0.2, max_depth= 7,objective='binary:logistic',n_estimators= 100,gamma=0.5,scale_pos_weight=3, n_jobs= -1,reg_alpha=0.2,reg_lambda=1,random_state =1367)
+    elif classifier == 'CNN':
+        classifier = ourCNN(len(dataset.columns) - 1)
+        option = 'dl'
+    else:
+        print("Please choose a valid classifier : \n<svm> for SVM(by default) \n <xgboost> for XGBoost \n <CNN> for a 3-layer deep-learning model")
         sys.exit(2)
 
     model = ml_model(classifier, dataset, option)
