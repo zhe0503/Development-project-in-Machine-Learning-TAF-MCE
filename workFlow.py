@@ -9,7 +9,7 @@ from xgboost.sklearn import XGBClassifier
 from dnn import ourDNN
 
 #utils
-from sklearn.metrics import make_scorer，precision_score,recall_score
+from sklearn.metrics import make_scorer, precision_score, recall_score
 from sklearn.model_selection import train_test_split,cross_validate
 from sklearn import preprocessing
 from sklearn.metrics import confusion_matrix
@@ -97,13 +97,14 @@ class ml_model():
 
 
     def crossValidation(self):
-        scoring = {'accuracy': 'accuracy',
-                    'precision' : make_scorer(precision_score, average = 'micro'),
-                    'recall' : make_scorer(recall_score, average = 'micro'), }
-        cross_val_scores = cross_validate(self.classifier, self.X_train, self.y_train, cv=10, scoring=scoring)
-        print('mean precision for 10-crossed validation:',statistics.mean(cross_val_scores['test_precision']))
-        print('mean recall for 10-crossed validation:',statistics.mean(cross_val_scores['test_recall']))
-        print('mean accuracy for 10-crossed validation:',statistics.mean(cross_val_scores['test_accuracy']))
+        if option == "ml":
+            scoring = {'accuracy': 'accuracy',
+                        'precision' : make_scorer(precision_score, average = 'micro'),
+                        'recall' : make_scorer(recall_score, average = 'micro'), }
+            cross_val_scores = cross_validate(self.classifier, self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], cv=10, scoring=scoring)
+            print('mean precision for 10-crossed validation:',statistics.mean(cross_val_scores['test_precision']))
+            print('mean recall for 10-crossed validation:',statistics.mean(cross_val_scores['test_recall']))
+            print('mean accuracy for 10-crossed validation:',statistics.mean(cross_val_scores['test_accuracy']))
        
 
 
@@ -157,3 +158,4 @@ if __name__ == '__main__':
     model = ml_model(classifier, dataset, option)
     model.train()
     model.predict()
+    model.crossValidation()
