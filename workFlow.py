@@ -1,14 +1,18 @@
 import numpy as np
 import pandas as pd
 import sys, getopt
+from sklearn import svm
+
 import cnn.CNN
 import figure.draw
 from sklearn.model_selection import train_test_split
 import tensorflow.keras as keras
+
 class ml():
     def __init__(self, classifier, dataset):
         self.classifier = classifier
         self.dataset = dataset
+        self.preprocess_data()
 
     def preprocess_data(self):
         
@@ -52,5 +56,10 @@ def argv_test(argv):
             classifier = arg
     print("dataset chose : ", dataset)
     print("classifier chose : ", classifier)
+    return dataset, classifier
 if __name__ == '__main__':
-    argv_test(sys.argv[1:])
+    dataset, classifier = argv_test(sys.argv[1:])
+    if classifier == '':
+        classifier = svm.SVC(kernel='linear')
+    model = ml(dataset, classifier)
+
