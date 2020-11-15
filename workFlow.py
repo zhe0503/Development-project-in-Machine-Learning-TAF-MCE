@@ -11,6 +11,11 @@ from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 from sklearn.metrics import confusion_matrix
 
+import tensorflow.keras as keras
+from keras.models import load_model
+import figure
+
+
 class ml_model():
     def __init__(self, classifier, dataset):
         self.classifier = classifier
@@ -79,8 +84,16 @@ class ml_model():
     def evaluation(self):
         pass
 
+    def train_dnn(self):
+    	model_checkpoint = keras.callbacks.ModelCheckpoint('./weight.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
+    	history = self.classifier.fit(self.X_train,self.y_train,epochs=20,batch_size=64,validation_data=(self.X_test,self.y_test),callbacks=[model_checkpoint])
+    	figure.draw(history)
 
-
+    def predict_cnn(self):
+        self.classifier = load_model('./weight.hdf5')
+        y_pred = (self.classifier.predict(self.X_test) > 0.5).astype("int32")
+        cm = confusion_matrix(self.y_test, y_pred)
+        print(cm)
 
 def argv_test(argv):
     dataset = ''
@@ -119,7 +132,7 @@ if __name__ == '__main__':
         cols_banknote=['variance of Wavelet Transformed image','skewness of Wavelet Transformed image','curtosis of Wavelet Transformed image','entropy of image','class']
         dataset=pd.read_csv('./Dataset/data_banknote_authentication.txt',names=cols_banknote)
     elif dataset == 'disease':
-        dataset=pd.read_csv('./Dataset/kidney_disease.csv', dtype=object,)
+        dataset=pd.read_csv('./Dataset/kidney_disease.csv', dtype=object)
     else:
         print("Please choose a valid dataset : \n<banknote> for banknote authentication dataset(by default) \n and <disease> for Chronic KIdney Disease dataset")
         sys.exit(2)
@@ -127,7 +140,3 @@ if __name__ == '__main__':
     model = ml_model(classifier, dataset)
     model.train()
     model.predict()
-    
-    
-
-
