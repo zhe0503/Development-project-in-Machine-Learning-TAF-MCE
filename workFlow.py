@@ -2,10 +2,12 @@ import numpy as np
 import pandas as pd
 
 import sys, getopt
+import cnn
 from sklearn import svm
 
-import cnn.CNN
-import figure.draw
+#import cnn.CNN
+#import figure.draw
+
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 import tensorflow.keras as keras
@@ -27,52 +29,58 @@ class ml():
             # code category data
             dataset[col], mapping_index = pd.Series(dataset[col]).factorize()
             return dataset[col],mapping_index
+
+        print("preprocessing dataset ...")
             
-        if dataset == df_disease:
+        if len(self.dataset.columns) > 5:
             #This dataset has two types of attribute:
             col_disease_num=['id','age','bp','sg','al','su','bgr','bu','sc','sod','pot','hemo','pcv','wc','rc']
             col_disease_str=['rbc','pc','pcc','ba','htn','dm','cad','appet','pe','ane','classification']
         
             #replace missing values of the disease dataset:
             for col in col_disease_num:
-                dataset[col]=pd.to_numeric(dataset[col], errors='coerce')
-                dataset[col].fillna(dataset[col].median(), inplace = True)
+                self.dataset[col]=pd.to_numeric(self.dataset[col], errors='coerce')
+                self.dataset[col].fillna(self.dataset[col].median(), inplace = True)
             for col in col_disease_str:
-                dataset[col]=dataset[col].astype('category')
-                dataset[col].fillna(dataset[col].mode()[0], inplace = True)
+                self.dataset[col]=self.dataset[col].astype('category')
+                self.dataset[col].fillna(self.dataset[col].mode()[0], inplace = True)
                 
             #Replace incorrect values:
-            dataset['dm'] =dataset['dm'].replace(to_replace = {'\tno':'no','\tyes':'yes',' yes':'yes'})
-            dataset['cad'] = dataset['cad'].replace(to_replace = '\tno', value='no')
-            dataset['classification'] = dataset['classification'].replace(to_replace = 'ckd\t', value = 'ckd')
+            self.dataset['dm'] =self.dataset['dm'].replace(to_replace = {'\tno':'no','\tyes':'yes',' yes':'yes'})
+            self.dataset['cad'] = self.dataset['cad'].replace(to_replace = '\tno', value='no')
+            self.dataset['classification'] = self.dataset['classification'].replace(to_replace = 'ckd\t', value = 'ckd')
             
-            dataset=standardization(dataset, col_disease_num)    
+            self.dataset=standardization(self.dataset, col_disease_num)
             
             for col in col_disease_str:
-                dataset[col],_=labelEncoding(dataset,col)
+                self.dataset[col],_=labelEncoding(self.dataset,col)
                 
-        elif dateset= df_banknote:
-            dateset=standardization(dateset, dateset.columns)
+        elif len(self.dataset.columns) < 26:
+            self.dataset=standardization(self.dataset, self.dataset.columns)
             
         
         else:
             pass
+        print("dataset preprocessed.")
 
     def fit(self):
-    	model_checkpoint = keras.callbacks.ModelCheckpoint('./weight/weight_cnn.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
+    	#model_checkpoint = keras.callbacks.ModelCheckpoint('./weight/weight_cnn.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
 
-        classifier = CNN.fit(x_train,y_train,epochs=20,batch_size=512,validation_data=(x_val,y_val),callbacks=[model_checkpoint])
+        #classifier = CNN.fit(x_train,y_train,epochs=20,batch_size=512,validation_data=(x_val,y_val),callbacks=[model_checkpoint])
         
-        draw(classifier)
+        #draw(classifier)
+        pass
+
 
     def predict(self):
         pass
 
     def evaluation(self):
-		scores = CNN.evaluate(x_test, y_test)
-		for i in range(len(scores)):
-		 print("\n%s: %.2f%%" % (CNN.metrics_names[i], scores[i]*100))
-        pass
+		#scores = CNN.evaluate(x_test, y_test)
+		#for i in range(len(scores)):
+		 #print("\n%s: %.2f%%" % (CNN.metrics_names[i], scores[i]*100))
+
+
 
 
 def argv_test(argv):
@@ -100,5 +108,17 @@ if __name__ == '__main__':
     dataset, classifier = argv_test(sys.argv[1:])
     if classifier == '':
         classifier = svm.SVC(kernel='linear')
-    model = ml(dataset, classifier)
+    if dataset == '' or dataset == 'banknote':
+        cols_banknote=['variance of Wavelet Transformed image','skewness of Wavelet Transformed image','curtosis of Wavelet Transformed image','entropy of image','class']
+        dataset=pd.read_csv('./Dataset/data_banknote_authentication.txt',names=cols_banknote)
+    elif dataset == 'disease' or dataset == '':
+        dataset=pd.read_csv('./Dataset/kidney_disease.csv',dtype=object) 
+    else:
+        print("Please choose a valid dataset.")
+        sys.exit(2)
+    #print(dataset.columns)
+    model = ml(classifier, dataset)
+    
+    
+
 
