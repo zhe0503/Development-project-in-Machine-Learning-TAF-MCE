@@ -1,13 +1,15 @@
 import pandas as pd
 import sys, getopt
 
+
 #classifier
 from sklearn import svm
 from xgboost.sklearn import XGBClassifier
 from cnn import ourCNN
 
 #utils
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import make_scorer
+from sklearn.model_selection import train_test_split,cross_validate
 from sklearn import preprocessing
 from sklearn.metrics import confusion_matrix
 
@@ -80,6 +82,7 @@ class ml_model():
             figure.draw(history)
 
     def splitTrainTest(self):
+
         print("Data splitting ... ")
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], test_size = 0.2, random_state=44 )
         print("Split finished : Training size : %d, Test size : %d" %(self.X_train.shape[0], self.X_test.shape[0]))
@@ -93,8 +96,17 @@ class ml_model():
         cm = confusion_matrix(self.y_test, y_pred)
         print(cm)
 
-    def evaluation(self):
-        pass
+
+    def crossValidation(self):
+        scoring = {'accuracy': 'accuracy',
+                    'precision' : make_scorer(precision_score, average = 'micro'),
+                    'recall' : make_scorer(recall_score, average = 'micro'), }
+        cross_val_scores = cross_validate(self.classifier, self.X_train, self.y_train, cv=10, scoring=scoring)
+        print('mean precision for 10-crossed validation:',statistics.mean(cross_val_scores['test_precision']))
+        print('mean recall for 10-crossed validation:',statistics.mean(cross_val_scores['test_recall']))
+        print('mean accuracy for 10-crossed validation:',statistics.mean(cross_val_scores['test_accuracy']))
+       
+
 
 
 def argv_test(argv):
