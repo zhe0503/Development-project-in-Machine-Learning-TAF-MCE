@@ -1,22 +1,29 @@
-import numpy as np
 import pandas as pd
-
 import sys, getopt
-import cnn
-from sklearn import svm
 
-#import cnn.CNN
-#import figure.draw
+
+#classifier
+from sklearn import svm
+from xgboost.sklearn import XGBClassifier
+from cnn import ourCNN
+
+#utils
 from sklearn.metrics import make_scorer
 from sklearn.model_selection import train_test_split,cross_validate
 from sklearn import preprocessing
-import tensorflow.keras as keras
+from sklearn.metrics import confusion_matrix
 
-class ml():
-    def __init__(self, classifier, dataset):
+import tensorflow.keras as keras
+from keras.models import load_model
+import figure
+
+
+class ml_model():
+    def __init__(self, classifier, dataset, option):
         self.classifier = classifier
         self.dataset = dataset
         self.preprocess_data()
+        self.option = option
 
     def preprocess_data(self):
     
@@ -34,9 +41,9 @@ class ml():
             
         if len(self.dataset.columns) > 5:
             #This dataset has two types of attribute:
-            col_disease_num=['id','age','bp','sg','al','su','bgr','bu','sc','sod','pot','hemo','pcv','wc','rc']
+            col_disease_num=['age','bp','sg','al','su','bgr','bu','sc','sod','pot','hemo','pcv','wc','rc']
             col_disease_str=['rbc','pc','pcc','ba','htn','dm','cad','appet','pe','ane','classification']
-        
+            del self.dataset['id']
             #replace missing values of the disease dataset:
             for col in col_disease_num:
                 self.dataset[col]=pd.to_numeric(self.dataset[col], errors='coerce')
@@ -56,40 +63,49 @@ class ml():
                 self.dataset[col],_=labelEncoding(self.dataset,col)
                 
         elif len(self.dataset.columns) < 26:
-            self.dataset=standardization(self.dataset, self.dataset.columns)
-            
-        
+            self.dataset=standardization(self.dataset, self.dataset.columns[:-1])
         else:
-            pass
+            print("Invalid dataset.")
+            sys.exit(2)
+
+        self.splitTrainTest()
         print("dataset preprocessed.")
 
-    def fit(self):
-    	#model_checkpoint = keras.callbacks.ModelCheckpoint('./weight/weight_cnn.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
+    def train(self):
+        if self.option == "ml":
+            self.classifier.fit(self.X_train, self.y_train)
+        else:
+            model_checkpoint = keras.callbacks.ModelCheckpoint('./weight.hdf5', monitor="val_loss", mode="min",
+                                                               verbose=1, save_best_only=True)
+            history = self.classifier.fit(self.X_train, self.y_train, epochs=20, batch_size=64,
+                                          validation_data=(self.X_test, self.y_test), callbacks=[model_checkpoint])
+            figure.draw(history)
 
-        #classifier = CNN.fit(x_train,y_train,epochs=20,batch_size=512,validation_data=(x_val,y_val),callbacks=[model_checkpoint])
-        
-        #draw(classifier)
-        pass
-        
     def splitTrainTest(self):
-    
+
+        print("Data splitting ... ")
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], test_size = 0.2, random_state=44 )
-        
-        
+        print("Split finished : Training size : %d, Test size : %d" %(self.X_train.shape[0], self.X_test.shape[0]))
 
     def predict(self):
-        pass
+        if self.option != "ml":
+            self.classifier = load_model('./weight.hdf5')
+            y_pred = (self.classifier.predict(self.X_test) > 0.5).astype("int32")
+        else:
+            y_pred = self.classifier.predict(self.X_test)
+        cm = confusion_matrix(self.y_test, y_pred)
+        print(cm)
+
 
     def crossValidation(self):
-		scoring = {'accuracy': 'accuracy',
+        scoring = {'accuracy': 'accuracy',
                     'precision' : make_scorer(precision_score, average = 'micro'),
                     'recall' : make_scorer(recall_score, average = 'micro'), }
         cross_val_scores = cross_validate(self.classifier, self.X_train, self.y_train, cv=10, scoring=scoring)
         print('mean precision for 10-crossed validation:',statistics.mean(cross_val_scores['test_precision']))
         print('mean recall for 10-crossed validation:',statistics.mean(cross_val_scores['test_recall']))
-        print('mean recall for 10-crossed validation:',statistics.mean(cross_val_scores['test_accuracy']))
+        print('mean accuracy for 10-crossed validation:',statistics.mean(cross_val_scores['test_accuracy']))
        
-
 
 
 
@@ -98,11 +114,10 @@ def argv_test(argv):
     classifier = ''
     try:
         opts, args = getopt.getopt(argv, "hd:c:", ["dataset=", "classifier="])
-    except getopt.GetoptError as e:
-        #print(e)
-        print("python workFlow.py -d <dataset> -c <classifier>")
-        print("Please choose dataset from Banknote Authentication Dataset and Chronic Kidney Disease")
-        print("Classifier option : xxx ; svm used by default")
+    except getopt.GetoptError:
+        print("use : python workFlow.py -d <dataset> -c <classifier>")
+        print("Please choose a valid classifier : \n<svm> for SVM(by default) \n <xgboost> for XGBoost \n <CNN> for a 3-layer deep-learning model")
+        print("Please choose a valid dataset : \n<banknote> for banknote authentication dataset(by default) \n and <disease> for Chronic KIdney Disease dataset")
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
@@ -114,21 +129,30 @@ def argv_test(argv):
     print("dataset chose : ", dataset)
     print("classifier chose : ", classifier)
     return dataset, classifier
+
 if __name__ == '__main__':
     dataset, classifier = argv_test(sys.argv[1:])
-    if classifier == '':
+    option = 'ml'
+    if classifier == '' or classifier == "svm":
         classifier = svm.SVC(kernel='linear')
-    if dataset == '' or dataset == 'banknote':
+    elif classifier == 'xgboost':
+        classifier = XGBClassifier(learning_rate= 0.2, max_depth= 7,objective='binary:logistic',n_estimators= 100,gamma=0.5,scale_pos_weight=3, n_jobs= -1,reg_alpha=0.2,reg_lambda=1,random_state =1367)
+    elif classifier == 'CNN':
+        classifier = ourCNN(4)
+        option = 'dl'
+    else:
+        print("Please choose a valid classifier : \n<svm> for SVM(by default) \n <xgboost> for XGBoost \n <CNN> for a 3-layer deep-learning model")
+        sys.exit(2)
+
+    if dataset == 'banknote' or dataset == '':
         cols_banknote=['variance of Wavelet Transformed image','skewness of Wavelet Transformed image','curtosis of Wavelet Transformed image','entropy of image','class']
         dataset=pd.read_csv('./Dataset/data_banknote_authentication.txt',names=cols_banknote)
-    elif dataset == 'disease' or dataset == '':
-        dataset=pd.read_csv('./Dataset/kidney_disease.csv',dtype=object) 
+    elif dataset == 'disease':
+        dataset=pd.read_csv('./Dataset/kidney_disease.csv', dtype=object)
     else:
-        print("Please choose a valid dataset.")
+        print("Please choose a valid dataset : \n<banknote> for banknote authentication dataset(by default) \n and <disease> for Chronic KIdney Disease dataset")
         sys.exit(2)
-    #print(dataset.columns)
-    model = ml(classifier, dataset)
-    
-    
 
-
+    model = ml_model(classifier, dataset, option)
+    model.train()
+    model.predict()
