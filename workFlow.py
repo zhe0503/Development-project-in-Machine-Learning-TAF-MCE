@@ -7,8 +7,8 @@ from sklearn import svm
 
 #import cnn.CNN
 #import figure.draw
-
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import make_scorer
+from sklearn.model_selection import train_test_split,cross_validate
 from sklearn import preprocessing
 import tensorflow.keras as keras
 
@@ -73,18 +73,22 @@ class ml():
         
     def splitTrainTest(self):
     
-        X_train, X_test, y_train, y_test = train_test_split(self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], test_size = 0.2, random_state=44 )
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], test_size = 0.2, random_state=44 )
         
-        return X_train, X_test, y_train, y_test
+        
 
     def predict(self):
         pass
 
-    def evaluation(self):
-		#scores = CNN.evaluate(x_test, y_test)
-		#for i in range(len(scores)):
-		#print("\n%s: %.2f%%" % (CNN.metrics_names[i], scores[i]*100))
-        pass
+    def crossValidation(self):
+		scoring = {'accuracy': 'accuracy',
+                    'precision' : make_scorer(precision_score, average = 'micro'),
+                    'recall' : make_scorer(recall_score, average = 'micro'), }
+        cross_val_scores = cross_validate(self.classifier, self.X_train, self.y_train, cv=10, scoring=scoring)
+        print('mean precision for 10-crossed validation:',statistics.mean(cross_val_scores['test_precision']))
+        print('mean recall for 10-crossed validation:',statistics.mean(cross_val_scores['test_recall']))
+        print('mean recall for 10-crossed validation:',statistics.mean(cross_val_scores['test_accuracy']))
+       
 
 
 
