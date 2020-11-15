@@ -33,7 +33,7 @@ To install the required package, use :
 Project
 └── workFlow.py
 └── dnn.py
-└── pro-processing-kedney_disease.ipynb
+└── pre-processing-dataset.ipynb
 └── Dataset
     └── data_banknote_authentication.txt
     └── kedney_disease.csv
