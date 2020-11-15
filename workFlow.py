@@ -5,17 +5,16 @@ import sys, getopt
 #classifier
 from sklearn import svm
 from xgboost.sklearn import XGBClassifier
-from cnn import ourCNN
+from dnn import ourDNN
 
 #utils
 from sklearn.metrics import make_scorer
 from sklearn.model_selection import train_test_split,cross_validate
 from sklearn import preprocessing
 from sklearn.metrics import confusion_matrix
-
+from dnn import draw
 import tensorflow.keras as keras
 from keras.models import load_model
-import figure
 
 
 class ml_model():
@@ -78,7 +77,7 @@ class ml_model():
                                                                verbose=1, save_best_only=True)
             history = self.classifier.fit(self.X_train, self.y_train, epochs=20, batch_size=64,
                                           validation_data=(self.X_test, self.y_test), callbacks=[model_checkpoint])
-            figure.draw(history)
+            draw(history)
 
     def splitTrainTest(self):
 
@@ -147,11 +146,11 @@ if __name__ == '__main__':
         classifier = svm.SVC(kernel='linear')
     elif classifier == 'xgboost':
         classifier = XGBClassifier(learning_rate= 0.2, max_depth= 7,objective='binary:logistic',n_estimators= 100,gamma=0.5,scale_pos_weight=3, n_jobs= -1,reg_alpha=0.2,reg_lambda=1,random_state =1367)
-    elif classifier == 'CNN':
-        classifier = ourCNN(len(dataset.columns) - 1)
+    elif classifier == 'DNN':
+        classifier = ourDNN(len(dataset.columns) - 1)
         option = 'dl'
     else:
-        print("Please choose a valid classifier : \n<svm> for SVM(by default) \n <xgboost> for XGBoost \n <CNN> for a 3-layer deep-learning model")
+        print("Please choose a valid classifier : \n<svm> for SVM(by default) \n <xgboost> for XGBoost \n <DNN> for a 3-layer deep-learning model")
         sys.exit(2)
 
     model = ml_model(classifier, dataset, option)
