@@ -25,7 +25,10 @@ class ml():
     def predict(self):
         pass
 
-    def validate(self):
+    def evaluation(self):
+		scores = CNN.evaluate(x_test, y_test)
+		for i in range(len(scores)):
+		 print("\n%s: %.2f%%" % (CNN.metrics_names[i], scores[i]*100))
         pass
 
 
