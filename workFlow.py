@@ -1,19 +1,22 @@
-import numpy as np
 import pandas as pd
-
 import sys, getopt
-import cnn
+
+#classifier
 from sklearn import svm
+from xgboost.sklearn import XGBClassifier
+from cnn import ourCNN
 
-import figure
-
+#utils
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 from sklearn.metrics import confusion_matrix
+
 import tensorflow.keras as keras
 from keras.models import load_model
+import figure
 
-class ml():
+
+class ml_model():
     def __init__(self, classifier, dataset):
         self.classifier = classifier
         self.dataset = dataset
@@ -35,9 +38,9 @@ class ml():
             
         if len(self.dataset.columns) > 5:
             #This dataset has two types of attribute:
-            col_disease_num=['id','age','bp','sg','al','su','bgr','bu','sc','sod','pot','hemo','pcv','wc','rc']
+            col_disease_num=['age','bp','sg','al','su','bgr','bu','sc','sod','pot','hemo','pcv','wc','rc']
             col_disease_str=['rbc','pc','pcc','ba','htn','dm','cad','appet','pe','ane','classification']
-        
+            del self.dataset['id']
             #replace missing values of the disease dataset:
             for col in col_disease_num:
                 self.dataset[col]=pd.to_numeric(self.dataset[col], errors='coerce')
@@ -59,49 +62,48 @@ class ml():
         elif len(self.dataset.columns) < 26:
             self.dataset=standardization(self.dataset, self.dataset.columns[:-1])
         else:
-            pass
-        print("dataset preprocessed.")
-        
+            print("Invalid dataset.")
+            sys.exit(2)
+
         self.splitTrainTest()
-   
-        
+        print("dataset preprocessed.")
+
     def train(self):
+        self.classifier.fit(self.X_train, self.y_train)
+        
+    def splitTrainTest(self):
+        print("Data splitting ... ")
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], test_size = 0.2, random_state=44 )
+        print("Split finished : Training size : %d, Test size : %d" %(self.X_train.shape[0], self.X_test.shape[0]))
+
+    def predict(self):
+        y_pred = self.classifier.predict(self.X_test)
+        cm = confusion_matrix(self.y_test, y_pred)
+        print(cm)
+
+    def evaluation(self):
+        pass
+
+    def train_dnn(self):
     	model_checkpoint = keras.callbacks.ModelCheckpoint('./weight.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
     	history = self.classifier.fit(self.X_train,self.y_train,epochs=20,batch_size=64,validation_data=(self.X_test,self.y_test),callbacks=[model_checkpoint])
     	figure.draw(history)
-    	pass
-    	
 
-        
-    def splitTrainTest(self):
-    
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], test_size = 0.2, random_state=44 )
-        
-
-    def predict(self):
+    def predict_cnn(self):
         self.classifier = load_model('./weight.hdf5')
         y_pred = (self.classifier.predict(self.X_test) > 0.5).astype("int32")
         cm = confusion_matrix(self.y_test, y_pred)
         print(cm)
-                              
-        
-    def evaluation(self):
-
-    	scores = self.classifier.evaluate(self.X_test, self.y_test)
-    	for i in range(len(scores)):
-    		print("\n%s: %.2f%%" % (self.classifier.metrics_names[i], scores[i]*100))
-
 
 def argv_test(argv):
     dataset = ''
     classifier = ''
     try:
         opts, args = getopt.getopt(argv, "hd:c:", ["dataset=", "classifier="])
-    except getopt.GetoptError as e:
-        #print(e)
-        print("python workFlow.py -d <dataset> -c <classifier>")
-        print("Please choose dataset from Banknote Authentication Dataset and Chronic Kidney Disease")
-        print("Classifier option : xxx ; svm used by default")
+    except getopt.GetoptError:
+        print("use : python workFlow.py -d <dataset> -c <classifier>")
+        print("Please choose a valid classifier : \n<svm> for SVM(by default) \n <xgboost> for XGBoost \n <CNN> for a 3-layer deep-learning model")
+        print("Please choose a valid dataset : \n<banknote> for banknote authentication dataset(by default) \n and <disease> for Chronic KIdney Disease dataset")
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
@@ -113,28 +115,28 @@ def argv_test(argv):
     print("dataset chose : ", dataset)
     print("classifier chose : ", classifier)
     return dataset, classifier
+
 if __name__ == '__main__':
     dataset, classifier = argv_test(sys.argv[1:])
-    if classifier == 'CNN':
-        classifier = cnn.ourCNN()
+    if classifier == '' or classifier == "svm":
+        classifier = svm.SVC(kernel='linear')
+    elif classifier == 'xgboost':
+        classifier = XGBClassifier(learning_rate= 0.2, max_depth= 7,objective='binary:logistic',n_estimators= 100,gamma=0.5,scale_pos_weight=3, n_jobs= -1,reg_alpha=0.2,reg_lambda=1,random_state =1367)
+    elif classifier == 'CNN':
+        classifier = ourCNN()
     else:
-        print("Please choose a valid model.")
+        print("Please choose a valid classifier : \n<svm> for SVM(by default) \n <xgboost> for XGBoost \n <CNN> for a 3-layer deep-learning model")
         sys.exit(2)
-        
-    if dataset == '' or dataset == 'banknote':
+
+    if dataset == 'banknote' or dataset == '':
         cols_banknote=['variance of Wavelet Transformed image','skewness of Wavelet Transformed image','curtosis of Wavelet Transformed image','entropy of image','class']
         dataset=pd.read_csv('./Dataset/data_banknote_authentication.txt',names=cols_banknote)
-    elif dataset == 'disease' :
-        dataset=pd.read_csv('./Dataset/kidney_disease.csv',dtype=object) 
+    elif dataset == 'disease':
+        dataset=pd.read_csv('./Dataset/kidney_disease.csv', dtype=object)
     else:
-        print("Please choose a valid dataset.")
+        print("Please choose a valid dataset : \n<banknote> for banknote authentication dataset(by default) \n and <disease> for Chronic KIdney Disease dataset")
         sys.exit(2)
-    #print(dataset.columns)
-    model = ml(classifier, dataset)
-    n_folds = 10
-    model.train();
-    model.predict();
-    #model. evaluate();
-    
 
-
+    model = ml_model(classifier, dataset)
+    model.train()
+    model.predict()
