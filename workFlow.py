@@ -1,11 +1,13 @@
 import numpy as np
 import pandas as pd
+
 import sys, getopt
 from sklearn import svm
 
 import cnn.CNN
 import figure.draw
 from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
 import tensorflow.keras as keras
 
 class ml():
@@ -15,9 +17,46 @@ class ml():
         self.preprocess_data()
 
     def preprocess_data(self):
+    
+        def standardization(dataset, dict_col):
+            # Standardization of datasets to : Gaussian with zero mean and unit variance.
+            dataset[dict_col]=preprocessing.scale(dataset[dict_col])
+            return dataset
+            
+        def labelEncoding(dataset,col):
+            # code category data
+            dataset[col], mapping_index = pd.Series(dataset[col]).factorize()
+            return dataset[col],mapping_index
+            
+        if dataset == df_disease:
+            #This dataset has two types of attribute:
+            col_disease_num=['id','age','bp','sg','al','su','bgr','bu','sc','sod','pot','hemo','pcv','wc','rc']
+            col_disease_str=['rbc','pc','pcc','ba','htn','dm','cad','appet','pe','ane','classification']
         
-		
-        pass
+            #replace missing values of the disease dataset:
+            for col in col_disease_num:
+                dataset[col]=pd.to_numeric(dataset[col], errors='coerce')
+                dataset[col].fillna(dataset[col].median(), inplace = True)
+            for col in col_disease_str:
+                dataset[col]=dataset[col].astype('category')
+                dataset[col].fillna(dataset[col].mode()[0], inplace = True)
+                
+            #Replace incorrect values:
+            dataset['dm'] =dataset['dm'].replace(to_replace = {'\tno':'no','\tyes':'yes',' yes':'yes'})
+            dataset['cad'] = dataset['cad'].replace(to_replace = '\tno', value='no')
+            dataset['classification'] = dataset['classification'].replace(to_replace = 'ckd\t', value = 'ckd')
+            
+            dataset=standardization(dataset, col_disease_num)    
+            
+            for col in col_disease_str:
+                dataset[col],_=labelEncoding(dataset,col)
+                
+        elif dateset= df_banknote:
+            dateset=standardization(dateset, dateset.columns)
+            
+        
+        else:
+            pass
 
     def fit(self):
     	model_checkpoint = keras.callbacks.ModelCheckpoint('./weight/weight_cnn.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
