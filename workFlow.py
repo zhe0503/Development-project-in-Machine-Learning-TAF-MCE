@@ -70,7 +70,12 @@ class ml():
         
         #draw(classifier)
         pass
-
+        
+    def splitTrainTest(self):
+    
+        X_train, X_test, y_train, y_test = train_test_split(self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], test_size = 0.2, random_state=44 )
+        
+        return X_train, X_test, y_train, y_test
 
     def predict(self):
         pass
@@ -78,7 +83,8 @@ class ml():
     def evaluation(self):
 		#scores = CNN.evaluate(x_test, y_test)
 		#for i in range(len(scores)):
-		 #print("\n%s: %.2f%%" % (CNN.metrics_names[i], scores[i]*100))
+		#print("\n%s: %.2f%%" % (CNN.metrics_names[i], scores[i]*100))
+        pass
 
 
 
