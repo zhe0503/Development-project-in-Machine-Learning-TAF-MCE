@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
 import sys, getopt
-
-import cnn.ourCNN
-
+import cnn
 from sklearn import svm
 import figure.draw
 from sklearn.model_selection import train_test_split
@@ -60,7 +58,7 @@ def argv_test(argv):
     return dataset, classifier
 if __name__ == '__main__':
     dataset, classifier = argv_test(sys.argv[1:])
-    if classifier == '':
-        classifier = svm.SVC(kernel='linear')
+    if classifier == 'CNN':
+        classifier = cnn.ourCNN()
     model = ml(dataset, classifier)
 
