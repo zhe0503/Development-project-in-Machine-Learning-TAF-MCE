@@ -9,7 +9,9 @@ import figure
 
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
+from sklearn.metrics import confusion_matrix
 import tensorflow.keras as keras
+from keras.models import load_model
 
 class ml():
     def __init__(self, classifier, dataset):
@@ -59,12 +61,13 @@ class ml():
         else:
             pass
         print("dataset preprocessed.")
-    
+        
+        self.splitTrainTest()
    
         
     def train(self):
     	model_checkpoint = keras.callbacks.ModelCheckpoint('./weight.hdf5', monitor="val_loss", mode="min", verbose=1, save_best_only=True)
-    	history = self.classifier.fit(self.X_train,self.y_train,epochs=20,batch_size=512,validation_data=(self.X_test,self.y_test),callbacks=[model_checkpoint])
+    	history = self.classifier.fit(self.X_train,self.y_train,epochs=20,batch_size=64,validation_data=(self.X_test,self.y_test),callbacks=[model_checkpoint])
     	figure.draw(history)
     	pass
     	
@@ -72,15 +75,16 @@ class ml():
         
     def splitTrainTest(self):
     
-        X_train, X_test, y_train, y_test = train_test_split(self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], test_size = 0.2, random_state=44 )
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset.iloc[:,:-1], self.dataset.iloc[:,-1], test_size = 0.2, random_state=44 )
         
-        return X_train, X_test, y_train, y_test
-
 
     def predict(self):
-    	model = load_model('./weight.hdf5')
-    	
-    	result = model.predict(self.X_test)
+        self.classifier = load_model('./weight.hdf5')
+        y_pred = (self.classifier.predict(self.X_test) > 0.5).astype("int32")
+        cm = confusion_matrix(self.y_test, y_pred)
+        print(cm)
+                              
+        
     def evaluation(self):
 
     	scores = self.classifier.evaluate(self.X_test, self.y_test)
@@ -115,6 +119,7 @@ if __name__ == '__main__':
         classifier = cnn.ourCNN()
     else:
         print("Please choose a valid model.")
+        sys.exit(2)
         
     if dataset == '' or dataset == 'banknote':
         cols_banknote=['variance of Wavelet Transformed image','skewness of Wavelet Transformed image','curtosis of Wavelet Transformed image','entropy of image','class']
