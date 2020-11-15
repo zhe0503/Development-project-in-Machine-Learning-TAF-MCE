@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 import sys, getopt
 import statistics 
 import matplotlib.pyplot as plt
@@ -9,9 +11,8 @@ from xgboost.sklearn import XGBClassifier
 from dnn import ourDNN
 
 #utils
-
+from itertools import *
 from sklearn.metrics import make_scorer,precision_score,recall_score
-
 from sklearn.model_selection import train_test_split,cross_validate
 from sklearn import preprocessing
 from sklearn.metrics import confusion_matrix
@@ -97,9 +98,10 @@ class ml_model():
         cm = confusion_matrix(self.y_test, y_pred)
         
         if len(self.dataset.columns) > 5:
-            _plot_confusion_matrix(cm, classes=['ckd', 'notckd'], normalize =True)
+            classes = ['ckd', 'notckd']
+            self._plot_confusion_matrix(cm, classes, normalize=True)
         else:
-            _plot_confusion_matrix(cm, classes=['0', '1'], normalize =True)
+            self._plot_confusion_matrix(cm, ['0', '1'], normalize=True)
 
 
     def crossValidation(self):
@@ -111,8 +113,8 @@ class ml_model():
             print('mean precision for 10-crossed validation:',statistics.mean(cross_val_scores['test_precision']))
             print('mean recall for 10-crossed validation:',statistics.mean(cross_val_scores['test_recall']))
             print('mean accuracy for 10-crossed validation:',statistics.mean(cross_val_scores['test_accuracy']))
-       
-    def _plot_confusion_matrix(cm, classes,
+
+    def _plot_confusion_matrix(self, cm, classes,
                           normalize=False,
                           title='Confusion matrix',
                           cmap=plt.cm.Greens):
@@ -135,7 +137,7 @@ class ml_model():
 
         fmt = '.2f' if normalize else 'd'
         thresh = cm.max() / 2.
-        for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        for i, j in product(range(cm.shape[0]), range(cm.shape[1])):
             plt.text(j, i, format(cm[i, j], fmt),
                     horizontalalignment="center",
                     color="white" if cm[i, j] > thresh else "black")
@@ -144,6 +146,8 @@ class ml_model():
         plt.xlabel('Predicted label', fontsize = 20)
         plt.tick_params(axis='both', which='major', labelsize=20)
         plt.tight_layout()
+        plt.show()
+
 
 
 def argv_test(argv):
