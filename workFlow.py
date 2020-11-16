@@ -44,8 +44,9 @@ class ml_model():
             
         if len(self.dataset.columns) > 5:
             #This dataset has two types of attribute:
-            col_disease_num=['age','bp','sg','al','su','bgr','bu','sc','sod','pot','hemo','pcv','wc','rc']
-            col_disease_str=['rbc','pc','pcc','ba','htn','dm','cad','appet','pe','ane','classification']
+            col_disease_num=['age','bp','bgr','bu','sc','sod','pot','hemo','pcv','wc','rc']
+            col_disease_str=['sg','al','su','rbc','pc','pcc','ba','htn','dm','cad','appet','pe','ane','classification']
+
             #replace missing values of the disease dataset:
             for col in col_disease_num:
                 self.dataset[col]=pd.to_numeric(self.dataset[col], errors='coerce')
